@@ -1,3 +1,4 @@
+
 name: Build BBS 1.7.10 Forge
 
 on:
@@ -7,8 +8,9 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Check out repository
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Set up Java 8
@@ -17,18 +19,21 @@ jobs:
           distribution: temurin
           java-version: '8'
 
-      - name: Set up Gradle 2.14.1
+      - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '2.14.1'
 
-      - name: Build Forge mod
-        run: gradle --no-daemon clean build
+      - name: Extract project ZIP
+        run: |
+          unzip -oq bbs-1.7.10-forge-starter.zip -d project
+          cd project/bbs-1.7.10-forge-starter
+          gradle --no-daemon build
 
-      - name: Upload build artifacts
-        if: always()
+      - name: Upload JAR
         uses: actions/upload-artifact@v4
+        if: always()
         with:
-          name: bbs-fs-1.7.10-build
-          path: build/libs/*.jar
+          name: BBS-FS-1.7.10
+          path: project/**/build/libs/*.jar
           if-no-files-found: warn
