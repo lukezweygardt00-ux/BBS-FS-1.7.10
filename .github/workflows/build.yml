@@ -19,15 +19,47 @@ jobs:
           distribution: temurin
           java-version: '8'
 
-      - name: Set up Gradle
+      - name: Set up Gradle 4.4.1
         uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: '2.14.1'
+          gradle-version: '4.4.1'
 
-      - name: Extract project ZIP
+      - name: Extract project
         run: |
+          mkdir -p project
           unzip -oq bbs-1.7.10-forge-starter.zip -d project
-          cd project/bbs-1.7.10-forge-starter
+
+      - name: Patch old ForgeGradle
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          files = list(Path("project").rglob("build.gradle"))
+          if not files:
+              raise SystemExit("ERROR: build.gradle not found")
+
+          p = files[0]
+          s = p.read_text()
+
+          s = s.replace(
+              "net.minecraftforge.gradle:ForgeGradle:1.2-SNAPSHOT",
+              "com.github.GTNewHorizons:ForgeGradle:1.2.11"
+          )
+
+          s = s.replace(
+              "repositories {",
+              "repositories {\n        maven { url 'https://jitpack.io' }",
+              1
+          )
+
+          p.write_text(s)
+          print("Patched:", p)
+          PY
+
+      - name: Build Forge mod
+        run: |
+          PROJECT_DIR=$(dirname "$(find project -name build.gradle | head -n 1)")
+          cd "$PROJECT_DIR"
           gradle --no-daemon build
 
       - name: Upload JAR
